@@ -1,0 +1,254 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+
+@model IEnumerable<TelerikMvcApp1.Models.Form3A>
+
+<div id="example">
+    <div class="panel">
+        <div class="panel panel-heading">
+                Notification Form Bulk Submission (Kendo) POC
+        </div>
+        <div class="panel panel-body">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        var crudServiceBaseUrl = "/FormsJs",
+            dataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: crudServiceBaseUrl + "/FormsJs",
+                        dataType: "jsonp"
+                    },
+                    update: {
+                        url: crudServiceBaseUrl + "/FormsJs/Update",
+                        dataType: "jsonp"
+                    },
+                    destroy: {
+                        url: crudServiceBaseUrl + "/FormsJs/Destroy",
+                        dataType: "jsonp"
+                    },
+                    create: {
+                        url: crudServiceBaseUrl + "/FormsJs/Create",
+                        dataType: "jsonp"
+                    },
+                    validate: {
+
+                    },
+                    parameterMap: function (options, operation) {
+                        if (operation !== "read" && options.models) {
+                            return { models: kendo.stringify(options.models) };
+                        }
+                    }
+                },
+                batch: true,
+                pageSize: 20,
+                schema: {
+                    model: {
+                        id: "Id",
+                        fields: {
+                            Id: { editable: false, nullable: true },
+                            RepName: {
+                                validation: {
+                                }
+                            },
+                            RepNumber: { validation: {} },
+                            Email: {
+                                validation: {
+                                    required: {
+                                        message: "Email is required."
+                                    }
+                                }
+                            },
+                            Phone: {
+                                validation: {
+                                    required: {
+                                        message: "Phone is required."
+                                    }
+                                }
+                            },
+                            IsOverseas: { type: "boolean" },
+                            CommDate: {}
+                    }
+                }
+            }
+        });
+
+        $("#grid").kendoGrid({
+            dataSource: dataSource,
+            navigatable: true,
+            pageable: true,
+            height: 550,
+            toolbar: ["create", "validate", "cancel"],
+            columns: [
+                { command: "destroy", title: "&nbsp;", width: 100 },
+                { field: "", title: "", format: "{0:c}", width: 30 },
+                { field: "RepName", title: "Rep Name", format: "{0:c}", width: 150, editor: textareaEditor },
+                { field: "RepNumber", title: "Rep Number", format: "{0:c}", width: 150 },
+                { field: "PrincipleRel", title: "Principle Relationship", format: "{0:c}", width: 150 },
+                { field: "Gender", title: "Gender", format: "{0:c}", width: 80 },
+                { field: "DOB", title: "Date of Birth", format: "{0:MM-dd-yyyy}", width: 140, editor: dateEditor },
+                { field: "NRIC", title: "NRIC", format: "{0:c}", width: 100 },
+                { field: "Passport", title: "Passport", format: "{0:c}", width: 100 },
+                { field: "Email", title: "Email", format: "{0:c}", width: 100 },
+                { field: "Phone", title: "Phone", format: "{0:c}", width: 100 },
+                { field: "IsOverseas", title: "Overseas Based ?", width: 80, editor: customBoolEditor },
+                { field: "SfaActivities", title: "SFA Activities", format: "{0:c}", width: 500, editor: sfaActEditor },
+                { field: "FaaActivities", title: "FAA Activities", format: "{0:c}", width: 500 }
+                //{ field: "CommDate", title: "Comm Date", width: 140, format: "{0:MM-dd-yyyy}", editor: dateEditor },
+                ],
+            editable: {
+                //"confirmation": "Are you sure you want to delete this item?",
+                createAt: "bottom"
+            },
+            edit: function (e) {
+                var cur_cell = e.container;
+                var input = e.container.find(".k-input");
+                var value = input.val();
+
+                input.keyup(function () {
+                    value = input.val();
+                });
+                input.blur(function () {
+                    // $("#log").html(input.attr('name') + " blurred : " + value);
+                    //console.log(input.val());
+                    //console.log(input);                    
+                    PopulateRows(input, e);
+                });
+
+                //if (!e.model.isNew()) {
+                //    e.model.set("RepName", "test");
+                ////    // Disable the editor of the "id" column when editing data items
+                ////    //var numeric = e.container.find("input[name=id]").data("kendoNumericTextBox");
+                ////    //numeric.enable(false);
+                //}
+            }
+        });
+
+        function PopulateRows(fild, e) {
+            var grid = $("#grid").data("kendoGrid");
+            var rowval = fild.val();
+            var rowvalarr = rowval.split('\n');
+            var isAdded = false;
+            if (rowval.length) {
+                rowvalarr.forEach(function (entry) {
+                    if (entry.trim().length) {
+                        if (!isAdded) {
+                            console.log(fild);
+                            isAdded = true;
+                            console.log(e.model.RepName = entry);
+                        }
+                        else {
+                            grid.dataSource.add({
+                                RepName: entry,
+                                RepNumber: '',
+                                IsOverseas: false
+                            });
+                        }
+                    }
+                });
+            }
+        }
+               
+
+        function contains(value, values) {
+            for (var idx = 0; idx < values.length; idx++) {
+                if (values[idx] === value) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        function sfaActEditor(container, options) {
+            var actList = '<option>ALL</option>'
+                + '<option>Dealing in capital markets products that are securities</option>'
+                + '<option>in capital markets products that are units in a collective investment scheme</option>'
+                + '<option>Dealing in capital markets products that are exchange-traded derivatives contracts</option>'
+                + '<option>Dealing in capital markets products that are over-the-counter derivatives contracts</option>'
+                + '<option>Dealing in capital markets products that are spot foreign exchange contracts for the purposes of leveraged foreign exchange trading</option>'
+                + '<option>Product financing</option>'
+                + '<option>Fund management</option>'
+                + '<option>Providing custodial services</option>'
+                + '<option>Real estate investment trust management</option>'
+                + '<option>Providing credit rating services</option>'
+                + '<option>Advising on corporate finance</option>'
+                + '<option>Dealing in capital markets products that are securities</option>'
+                + '<option>Dealing in capital markets products that are units in a collective investment scheme</option>'
+                + '<option>Dealing in capital markets products that are exchange-traded derivatives contracts</option>'
+                + '<option>Dealing in capital markets products that are over-the-counter derivatives contracts</option>'
+                + '<option>Dealing in capital markets products that are spot foreign exchange contracts for the purposes of leveraged foreign exchange trading</option>';
+
+            
+            $('<select id="optional" data-bind="value: ' + options.field + '" multiple="multiple" data-placeholder="Select Activities...">' + actList + '</select>').appendTo(container);
+            var optional = $("#optional").kendoMultiSelect({
+                autoClose: false,
+                itemTemplate: '',
+                select: function (e) {
+                    var dataItemValue = this.dataSource.view()[e.item.index()].value;
+                    var values = this.value();
+
+                    if (dataItemValue !== "ALL" && contains(dataItemValue, values)) {
+                        return;
+                    }
+
+                    if (dataItemValue === "ALL") {
+                        values = [];
+                    } else if (values.indexOf("ALL") !== -1) {
+                        values = $.grep(values, function (value) {
+                            return value !== "ALL";
+                        });
+                    }
+
+                    values.push(dataItemValue);
+                    this.value(values);
+                    this.trigger("change"); //notify others for the updated values
+
+                    e.preventDefault();
+                }
+                //dataSource: {
+                //    type: "odata",
+                //    serverFiltering: true,
+                //    transport: {
+                //        read: {
+                //            url: "",
+                //        }
+                //    },
+                //    value: [
+                //        { ProductName: "Chang", ProductID: 2 },
+                //        { ProductName: "Uncle Bob's Organic Dried Pears", ProductID: 7 }
+                //    ]
+                //}
+            }).data("kendoMultiSelect");
+
+            //optional.popover(options);
+        }
+
+        function dateEditor(container, options) {
+            $('<input id="datepicker" data-bind="value: ' + options.field + '" title="datepicker" style="width: 100%">').appendTo(container);
+            $("#datepicker").kendoDatePicker({ format: "dd/MM/yyyy" });
+        }
+
+        function textareaEditor(container, options) {
+            $('<textarea class="k-input k-textbox" data-bind="value: ' + options.field + '" cols="20" rows="4"></textarea>')
+                .appendTo(container);
+        }
+
+        function customBoolEditor(container, options) {
+            $('<input class="k-checkbox" data-bind="value: ' + options.field + '" type="checkbox" name="IsOverseas" data-type="boolean" data-bind="checked:Discontinued">').appendTo(container);
+            $('<label class="k-checkbox-label">&#8203;</label>').appendTo(container);
+        }    
+
+    });
+
+   
+
+
+</script>
